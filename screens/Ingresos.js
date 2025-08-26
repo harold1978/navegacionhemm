@@ -5,13 +5,22 @@ import {
   Button,
   FlatList,
   StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  updateDoc,
+} from 'firebase/firestore';
+import { db } from '../storage/fire';
 
 export default function Ingresos({ navigation }) {
   const [nuevo, setNuevo] = useState({
-    id: '',
     fecha: new Date().toLocaleDateString(),
     nombre: '',
     descripcion: '',
@@ -19,29 +28,56 @@ export default function Ingresos({ navigation }) {
   });
   const [ingresos, setingresos] = useState([]);
 
-  const guardarIngresos = async (lista) => {
-    await AsyncStorage.setItem('ingresos', JSON.stringify(lista));
+  const guardarIngresos = async (registro) => {
+    try {
+      if (registro.id) {
+        await updateDoc(doc(db, 'tbl_ingresos', registro.id), registro);
+        cargarLocalStorage();
+        return;
+      }
+      await addDoc(collection(db, 'tbl_ingresos'), registro);
+      cargarLocalStorage();
+    } catch (error) {}
   };
   const guardardato = () => {
-    const dato = { ...nuevo, id: Date.now().toString() };
-    const list = [...ingresos, dato];
-    setingresos(list);
-    guardarIngresos(list);
+    guardarIngresos(nuevo);
     setNuevo({
-      id: '',
       fecha: new Date().toLocaleDateString(),
       nombre: '',
       descripcion: '',
       monto: '',
     });
   };
+  const subeliminar = async ({ item }) => {
+    try {
+      await deleteDoc(doc(db, 'tbl_ingresos', item.id));
+      cargarLocalStorage();
+    } catch (error) {
+      console.error('Error removing document: ', error);
+    }
+  };
+  const subactualizar = ({ item }) => {
+    console.log({ item });
+    setNuevo(item);
+  };
   const frender = ({ item }) => {
     return (
       <View style={styles.item}>
-        <Text style={styles.titulo}>{item.nombre}</Text>
+        <Text style={styles.titulo}>
+          {item.nombre} - {item.id}
+        </Text>
         <Text>{item.descripcion}</Text>
         <Text>{item.monto}</Text>
         <Text>{item.fecha}</Text>
+        <View style={styles.btnContainer}>
+          <TouchableOpacity
+            style={styles.btnD}
+            onPress={() => subeliminar({ item })}
+          >
+            <Text>ELIMINAR</Text>
+          </TouchableOpacity>
+          <Button title="Editar" onPress={() => subactualizar({ item })} />
+        </View>
       </View>
     );
   };
@@ -50,10 +86,10 @@ export default function Ingresos({ navigation }) {
     cargarLocalStorage();
   }, []);
   const cargarLocalStorage = async () => {
-    const datos = await AsyncStorage.getItem('ingresos');
-    if (datos) {
-      setingresos(JSON.parse(datos));
-    }
+    const datosaux = await getDocs(collection(db, 'tbl_ingresos'));
+    const datos = datosaux.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    console.log(datos);
+    setingresos(datos);
   };
   return (
     <View style={styles.container}>
@@ -91,5 +127,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, marginTop: 30 },
   titulo: { fontSize: 22, fontWeight: 'bold', marginBottom: 10 },
   input: { borderWidth: 1, marginVertical: 5, padding: 8, borderRadius: 5 },
-  item: { backgroundColor: '#bc400b', padding: 20, marginVertical: 8 },
+  item: { backgroundColor: '#bbd0f7', padding: 20, marginVertical: 8 },
+  btnContainer: { flexDirection: 'row', justifyContent: 'space-between' },
+  btnD: { backgroundColor: 'red', padding: 10, color: 'white' },
 });

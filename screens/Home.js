@@ -1,18 +1,23 @@
-import { View, Text, Button, StyleSheet } from 'react-native';
+import { View, Text, Button, StyleSheet, ScrollView } from 'react-native';
 import React from 'react';
 
 export default function Home({ navigation }) {
   return (
-    <View style={styles.titulo}>
-      <Text>Home</Text>
-      <View style={styles.container}>
-        <Button
-          title="INGRESOS"
-          onPress={() => navigation.navigate('Ingresos')}
-        />
-        <Button title="GASTOS" onPress={() => navigation.navigate('Gastos')} />
+    <ScrollView>
+      <View style={styles.titulo}>
+        <Text>Home</Text>
+        <View style={styles.container}>
+          <Button
+            title="INGRESOS"
+            onPress={() => navigation.navigate('Ingresos')}
+          />
+          <Button
+            title="GASTOS"
+            onPress={() => navigation.navigate('Gastos')}
+          />
+        </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 const styles = StyleSheet.create({
